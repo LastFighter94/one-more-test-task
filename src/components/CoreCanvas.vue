@@ -137,11 +137,14 @@ function startDrag(e: PointerEvent, onMove: (ev: PointerEvent) => void) {
 function startDragCenter(e: PointerEvent) {
   startDrag(e, (ev) => {
     const { x } = svgPoint(ev)
-    // Берём X в SVG-координатах, зажимаем в [0, 800], обновляем cx.
-    // ...ellipse.value — spread, чтобы не потерять остальные поля (cy, a, b, theta).
+    const { a, b, theta } = ellipse.value
+    const thetaRad = (theta * Math.PI) / 180
+    // Горизонтальный радиус габаритного прямоугольника эллипса — не даём центру
+    // уйти так, чтобы эллипс вышел за границы холста.
+    const bboxHalfX = Math.sqrt(a * a * Math.cos(thetaRad) ** 2 + b * b * Math.sin(thetaRad) ** 2)
     ellipse.value = {
       ...ellipse.value,
-      cx: Math.max(0, Math.min(WIDTH, x)),
+      cx: Math.max(bboxHalfX, Math.min(WIDTH - bboxHalfX, x)),
     }
   })
 }
@@ -159,8 +162,8 @@ function startDragApex(e: PointerEvent) {
     // Зажимаем y апекса в пределах керна [32, 188].
 
     // Апекс всегда правее центра. При dx = b знаменатель atan2 = 0 → деление на
-    // ноль. MIN_DX=10 — буфер безопасности.
-    const clampedX = Math.max(cx + b + MIN_DX, x)
+    // ноль. MIN_DX=10 — буфер безопасности. WIDTH — правая граница керна.
+    const clampedX = Math.max(cx + b + MIN_DX, Math.min(WIDTH, x))
 
     // Вызываем математику из ellipse.ts — возвращает новые { a, b, theta }.
     // Центр cx, cy оставляем старым.
