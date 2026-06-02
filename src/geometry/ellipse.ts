@@ -19,11 +19,11 @@ const toDeg = (rad: number) => (rad * 180) / Math.PI
  * Found by setting dx/dt = 0 in parametric form.
  */
 export function computeApex(e: EllipseParams): Point {
-  const cosTheta = toRad(e.theta)
-  const t0 = Math.atan2(-e.b * Math.sin(cosTheta), e.a * Math.cos(cosTheta))
+  const thetaRad = toRad(e.theta)
+  const t0 = Math.atan2(-e.b * Math.sin(thetaRad), e.a * Math.cos(thetaRad))
   return {
-    x: e.cx + e.a * Math.cos(t0) * Math.cos(cosTheta) - e.b * Math.sin(t0) * Math.sin(cosTheta),
-    y: e.cy + e.a * Math.cos(t0) * Math.sin(cosTheta) + e.b * Math.sin(t0) * Math.cos(cosTheta),
+    x: e.cx + e.a * Math.cos(t0) * Math.cos(thetaRad) - e.b * Math.sin(t0) * Math.sin(thetaRad),
+    y: e.cy + e.a * Math.cos(t0) * Math.sin(thetaRad) + e.b * Math.sin(t0) * Math.cos(thetaRad),
   }
 }
 
