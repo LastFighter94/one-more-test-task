@@ -4,6 +4,8 @@ Vue 3 + TypeScript + Vite. Интерактивный эллипс — след 
 
 ## Запуск
 
+node -v = v22.17.0 !!!
+
 ```bash
 npm install
 npm run dev
