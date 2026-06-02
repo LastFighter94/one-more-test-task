@@ -5,7 +5,7 @@
     style="display: block; background: #1a1a2e"
     ref="svgEl"
   >
-    <!-- Core rectangle -->
+    <!-- Серый прямоугольник керна -->
     <rect
       x="0"
       :y="CORE_TOP"
@@ -16,7 +16,7 @@
       stroke-width="1"
     />
 
-    <!-- Core axis -->
+    <!-- Пунктирная ось керна y=110 -->
     <line
       x1="0"
       :y1="CORE_AXIS_Y"
@@ -91,6 +91,8 @@ const apex = computed(() => computeApex(ellipse.value))
 
 const svgEl = ref<SVGSVGElement | null>(null)
 
+// Итог: из (clientX=450, clientY=200) получаем, например, (x=380, y=160) в
+// координатах SVG.
 function svgPoint(e: PointerEvent): { x: number; y: number } {
   const svg = svgEl.value!
   const pt = svg.createSVGPoint()
@@ -100,20 +102,17 @@ function svgPoint(e: PointerEvent): { x: number; y: number } {
   return { x: transformed.x, y: transformed.y }
 }
 
-// ── Center drag ────────────────────────────────────────────────
-function startDragCenter(e: PointerEvent) {
+// setPointerCapture говорит браузеру: "все последующие pointer-события
+// направляй на этот элемент, даже если мышь ушла за его пределы". Без этого —
+// быстро двигаешь мышь, она "убегает" с кружка, drag прерывается.
+// Листенеры вешаются на window, а не на сам <circle> — потому что мышь при
+// быстром движении физически выходит за пределы маленького кружка, и если
+// слушать только кружок — события пропадают.
+function startDrag(e: PointerEvent, onMove: (ev: PointerEvent) => void) {
   (e.target as Element).setPointerCapture(e.pointerId)
 
-  function onMove(ev: PointerEvent) {
-    const { x } = svgPoint(ev)
-    ellipse.value = {
-      ...ellipse.value,
-      cx: Math.max(0, Math.min(WIDTH, x)),
-    }
-  }
-
   function onUp(ev: PointerEvent) {
-    ;(ev.target as Element).releasePointerCapture(ev.pointerId)
+    (ev.target as Element).releasePointerCapture(ev.pointerId)
     window.removeEventListener('pointermove', onMove)
     window.removeEventListener('pointerup', onUp)
   }
@@ -122,30 +121,39 @@ function startDragCenter(e: PointerEvent) {
   window.addEventListener('pointerup', onUp)
 }
 
+// ── Center drag ────────────────────────────────────────────────
+function startDragCenter(e: PointerEvent) {
+  startDrag(e, (ev) => {
+    const { x } = svgPoint(ev)
+    // Берём X в SVG-координатах, зажимаем в [0, 800], обновляем cx.
+    // ...ellipse.value — spread, чтобы не потерять остальные поля (cy, a, b, theta).
+    ellipse.value = {
+      ...ellipse.value,
+      cx: Math.max(0, Math.min(WIDTH, x)),
+    }
+  })
+}
+
 // ── Apex drag ─────────────────────────────────────────────────
 const MIN_DX = 10
 
 function startDragApex(e: PointerEvent) {
-  (e.target as Element).setPointerCapture(e.pointerId)
-
-  function onMove(ev: PointerEvent) {
+  startDrag(e, (ev) => {
     const { x, y } = svgPoint(ev)
     const { cx, cy, b } = ellipse.value
+    // Cx, cy — центр, не меняется, b — малая полуось, константа (радиус керна).
 
     const clampedY = Math.max(CORE_TOP + 2, Math.min(CORE_BOTTOM - 2, y))
+    // Зажимаем y апекса в пределах керна [32, 188].
+
+    // Апекс всегда правее центра. При dx = b знаменатель atan2 = 0 → деление на
+    // ноль. MIN_DX=10 — буфер безопасности.
     const clampedX = Math.max(cx + b + MIN_DX, x)
 
+    // Вызываем математику из ellipse.ts — возвращает новые { a, b, theta }.
+    // Центр cx, cy оставляем старым.
     const updated = computeEllipseFromApex(cx, cy, clampedX, clampedY, b)
     ellipse.value = { cx, cy, ...updated }
-  }
-
-  function onUp(ev: PointerEvent) {
-    ;(ev.target as Element).releasePointerCapture(ev.pointerId)
-    window.removeEventListener('pointermove', onMove)
-    window.removeEventListener('pointerup', onUp)
-  }
-
-  window.addEventListener('pointermove', onMove)
-  window.addEventListener('pointerup', onUp)
+  })
 }
 </script>
