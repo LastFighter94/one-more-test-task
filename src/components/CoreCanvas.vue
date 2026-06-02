@@ -1,4 +1,5 @@
 <template>
+  <div>
   <svg
     :width="WIDTH"
     :height="HEIGHT"
@@ -67,6 +68,15 @@
     <text :x="ellipse.cx + 10" :y="ellipse.cy - 10" fill="#ffd740" font-size="11">center</text>
     <text :x="apex.x + 10" :y="apex.y - 10" fill="#ff6e6e" font-size="11">apex</text>
   </svg>
+
+  <div style="margin-top: 12px; display: flex; gap: 24px; font-size: 13px; color: #ccc">
+    <span>cx: <b style="color:#ffd740">{{ fmt(ellipse.cx) }}</b></span>
+    <span>cy: <b style="color:#ffd740">{{ fmt(ellipse.cy) }}</b></span>
+    <span>a: <b style="color:#4fc3f7">{{ fmt(ellipse.a) }}</b></span>
+    <span>b: <b style="color:#4fc3f7">{{ fmt(ellipse.b) }}</b></span>
+    <span>theta: <b style="color:#4fc3f7">{{ fmt(ellipse.theta) }}°</b></span>
+  </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -88,6 +98,8 @@ const ellipse = ref<EllipseParams>({
 })
 
 const apex = computed(() => computeApex(ellipse.value))
+
+const fmt = (n: number) => n.toFixed(1)
 
 const svgEl = ref<SVGSVGElement | null>(null)
 

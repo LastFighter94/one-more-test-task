@@ -1,5 +1,48 @@
-# Vue 3 + TypeScript + Vite
+# Core Fracture Trace
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+Vue 3 + TypeScript + Vite. Интерактивный эллипс — след трещины на керне.
 
-Learn more about the recommended Project Setup and IDE Support in the [Vue Docs TypeScript Guide](https://vuejs.org/guide/typescript/overview.html#project-setup).
+## Запуск
+
+```bash
+npm install
+npm run dev
+```
+
+## Как понят апекс
+
+Апекс — **правая крайняя точка эллипса**, то есть точка с максимальной координатой x. Для повёрнутого эллипса это не конец большой полуоси, а точка, лежащая на правой стороне его габаритного прямоугольника.
+
+## Почему апекс ≠ конец большой полуоси
+
+Конец большой полуоси — точка `(cx + a·cosθ, cy + a·sinθ)`. При наклоне эллипса (θ ≠ 0°, ≠ 90°) эта точка уходит вниз/вверх относительно горизонтали, но не является самой правой. Самая правая точка находится там, где касательная к эллипсу вертикальна, то есть `dx/dt = 0`. Это даёт другой параметр `t₀` и другую точку.
+
+Для θ = 45°, a = 100, b = 50: конец полуоси ≈ (370.7, 180.7), апекс ≈ (379.1, 157.4).
+
+## Алгоритм пересчёта эллипса при drag апекса
+
+Центр (cx, cy) и малая полуось b фиксированы. Из условия апекса выводятся два уравнения:
+
+```
+dx² = a²cos²θ + b²sin²θ
+dx·dy = (a²−b²)·sin(2θ)/2
+```
+
+Решение:
+
+```
+θ = atan2(dx·dy, dx² − b²)
+a = sqrt((dx² − b²·sin²θ) / cos²θ)
+```
+
+где `dx = apexX − cx`, `dy = apexY − cy`.
+
+## Ограничения и граничные случаи
+
+| Ситуация | Поведение |
+|---|---|
+| Центр уходит за границу SVG | cx зажат в [0, 800] |
+| Апекс уходит выше/ниже керна | apexY зажат в [coreTop+2, coreBottom−2] |
+| Апекс уводят левее центра | apexX зажат в cx + b + 10 |
+| dx ≈ b (знаменатель atan2 → 0) | буфер +10px предотвращает деление на ноль |
+| a < b после пересчёта | `Math.max(a², b²)` под корнем не даёт a упасть ниже b |
